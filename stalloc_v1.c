@@ -3,7 +3,6 @@
  */
 
 #include <stdlib.h>
-#include <stdint.h>
 
 #ifndef STALLOC
 #define STALLOC
@@ -11,7 +10,7 @@
 typedef struct node {
   // Treated as pointers
   size_t next;
-  size_t prev : sizeof(size_t)*8-1; 
+  size_t prev : sizeof(size_t)*8-1;
 
   size_t open : 1;
 } Node;
