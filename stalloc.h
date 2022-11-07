@@ -13,7 +13,7 @@
 // defines for perfomance sake
 #define st_nodeToPtr(n)    (void*) (  ((size_t)n)  + sizeof(Node) )
 #define st_ptrToNode(ptr)  (Node*) ( ((size_t)ptr) - sizeof(Node) )
-#define st_sizeof(ptr)     (st_ptrToNode(ptr))->next - (size_t)(st_ptrToNode(ptr)) - sizeof(Node)
+
 
 typedef struct node {
   // Treated as pointers
@@ -56,6 +56,7 @@ void st_destroy()
 // utilities
 void st_split(Node *split, Node *create)
 {
+  /* readable version
   // ptr to node after create
   Node *next = ((Node*)(split->next));
 
@@ -68,9 +69,21 @@ void st_split(Node *split, Node *create)
 
   // split -> create
   split->next = (size_t)create;
+  */
+
+  // old <- create -> next
+  create->next = split->next;
+  create->prev = (size_t)split;
+
+  // create <- next
+  ((Node*)(split->next))->prev = (size_t)create;
+
+  // split -> create
+  split->next = (size_t)create;
 }
 void st_join(Node *join, Node *rem)
 {
+  /* readable version
   // ptr to node after rem
   Node *next = (Node*)(rem->next);
 
@@ -79,12 +92,19 @@ void st_join(Node *join, Node *rem)
 
   // joined <- next
   next->prev = (size_t)join;
+  */
+
+  // joined -> next
+  join->next = rem->next;
+
+  // joined <- next
+  ((Node*)(rem->next))->prev = (size_t)join;
 }
 
 // alloc (first), free & sizeof
 void *st_malloc(size_t size)
 {
-
+  // No readable version needed. Already as fast as possible
   size = ALIGN(size);
 
   // start from beginning
@@ -95,13 +115,13 @@ void *st_malloc(size_t size)
     if( b->open )
     {
       // Size = distance - size of node
-      size_t b_size = (b->next-(size_t)b) - sizeof(Node);
+      size_t b_size = ( b->next - (size_t)b ) - sizeof(Node);
 
       // if split needed
       if( size < b_size )
       {
         // inserting create node
-        Node* create = (Node*)(((size_t)b)+size+sizeof(Node));
+        Node* create = (Node*)(((size_t)b) + size + sizeof(Node));
         st_split(b, create);
 
         // changing open values
@@ -128,6 +148,7 @@ void *st_malloc(size_t size)
 }
 void st_free(void *ptr)
 {
+  /* readable version
   // get relevent nodes
   Node *n = st_ptrToNode(ptr), 
        *prev = ((Node*)(n->prev)), 
@@ -140,6 +161,16 @@ void st_free(void *ptr)
     st_join(prev, n);
   else
     n->open = 1;
+  */
+  
+  // merging adjacent free blocks
+  if( ((Node*)((st_ptrToNode(ptr))->next))->open )
+    st_join(         (st_ptrToNode(ptr))         , ((Node*)((st_ptrToNode(ptr))->next)) );
+  if( ((Node*)((st_ptrToNode(ptr))->prev))->open )
+    st_join( ((Node*)((st_ptrToNode(ptr))->prev)),         (st_ptrToNode(ptr))          );
+  else
+    (st_ptrToNode(ptr))->open = 1;
 }
+#define st_sizeof(ptr)     (st_ptrToNode(ptr))->next - (size_t)(st_ptrToNode(ptr)) - sizeof(Node)
 
 #endif
