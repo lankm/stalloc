@@ -9,3 +9,4 @@ Implments a byte array with block nodes placed before given pointers.
 - Tested Nodes with indexes in C++  (432)
 
 Nodes with pointers won!! Sadly you can't create void* bitfields so theres a lot of casting
+- Further reduced NwP down to 226

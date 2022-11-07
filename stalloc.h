@@ -7,6 +7,14 @@
 #ifndef STALLOC
 #define STALLOC
 
+#define SYS_BYTE   sizeof(void*)
+#define ALIGN(s)   ((s-1) / SYS_BYTE * SYS_BYTE) + SYS_BYTE
+
+// defines for perfomance sake
+#define st_nodeToPtr(n)    (void*) (  ((size_t)n)  + sizeof(Node) )
+#define st_ptrToNode(ptr)  (Node*) ( ((size_t)ptr) - sizeof(Node) )
+#define st_sizeof(ptr)     (st_ptrToNode(ptr))->next - (size_t)(st_ptrToNode(ptr)) - sizeof(Node)
+
 typedef struct node {
   // Treated as pointers
   size_t next;
@@ -18,13 +26,11 @@ typedef struct node {
 // Allocated memory Node. Treated as pointer
 size_t st_mem;
 
-
-#include <stdio.h> //delete later
-void st_print();
-
 // init & destroy
 void st_init(size_t size)
 {
+  size = ALIGN(size);
+
   // byte array setup
   st_mem = (size_t)malloc(size);
 
@@ -48,20 +54,20 @@ void st_destroy()
 }
 
 // utilities
-void st_split(Node *split, Node *new)
+void st_split(Node *split, Node *create)
 {
-  // ptr to node after new
+  // ptr to node after create
   Node *next = ((Node*)(split->next));
 
-  // old <- new -> next
-  new->next = split->next;
-  new->prev = (size_t)split;
+  // old <- create -> next
+  create->next = split->next;
+  create->prev = (size_t)split;
 
-  // new <- next
-  next->prev = (size_t)new;
+  // create <- next
+  next->prev = (size_t)create;
 
-  // split -> new
-  split->next = (size_t)new;
+  // split -> create
+  split->next = (size_t)create;
 }
 void st_join(Node *join, Node *rem)
 {
@@ -74,18 +80,13 @@ void st_join(Node *join, Node *rem)
   // joined <- next
   next->prev = (size_t)join;
 }
-void * st_nodeToPtr(Node *n)
-{
-  return (void*)(((size_t)n)+sizeof(Node));
-}
-Node * st_ptrToNode(void *ptr)
-{
-  return (Node*)(((size_t)ptr)-sizeof(Node));
-}
 
 // alloc (first), free & sizeof
-void *st_alloc(size_t size)
+void *st_malloc(size_t size)
 {
+
+  size = ALIGN(size);
+
   // start from beginning
   Node *b = ((Node*)(st_mem));
   do
@@ -93,17 +94,18 @@ void *st_alloc(size_t size)
     // if open
     if( b->open )
     {
+      // Size = distance - size of node
       size_t b_size = (b->next-(size_t)b) - sizeof(Node);
 
       // if split needed
       if( size < b_size )
       {
-        // inserting new node
-        Node* new = (Node*)(((size_t)b)+size+sizeof(Node));
-        st_split(b, new);
+        // inserting create node
+        Node* create = (Node*)(((size_t)b)+size+sizeof(Node));
+        st_split(b, create);
 
         // changing open values
-        new->open=1;
+        create->open=1;
         b->open=0;
 
         return st_nodeToPtr(b);
@@ -121,8 +123,10 @@ void *st_alloc(size_t size)
     // goto next Node
     b = (Node*)(b->next);
   } while (b->next != (size_t)b);
+
+  return NULL;
 }
-int st_free(void *ptr)
+void st_free(void *ptr)
 {
   // get relevent nodes
   Node *n = st_ptrToNode(ptr), 
@@ -136,28 +140,6 @@ int st_free(void *ptr)
     st_join(prev, n);
   else
     n->open = 1;
-}
-size_t st_sizeof(void *ptr)
-{
-  // finding coresponding Node
-  Node *b = st_ptrToNode(ptr);
-
-  // retrieving value
-  return b->next-(size_t)b-sizeof(Node);
-}
-
-//delete later
-void st_print()
-{
-  Node *b = ((Node*)(st_mem));
-  do {
-    printf("==%llu==%llu==\n", (size_t)b, st_sizeof( (void*) (((size_t)b)+sizeof(Node)) ));
-    printf("n: %llu, p: %llu, o: %llu\n\n", b->next, b->prev, b->open);
-
-    b = (Node*)(b->next);
-  } while (b->next != (size_t)b);
-  printf("==%llu==%llu==\n", (size_t)b, 0);
-  printf("n: %llu, p: %llu, o: %llu\n\n", b->next, b->prev, b->open);
 }
 
 #endif

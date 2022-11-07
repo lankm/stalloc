@@ -11,7 +11,7 @@
 
 #define SYS_BYTE      sizeof(void*)
 #define ALIGN(s)      ((s-1) / SYS_BYTE * SYS_BYTE) + SYS_BYTE
-#define st_indexOf(p) (size_t) ((void*)p - (void*)st_mem)
+#define st_indexOf(p) (size_t) ((char*)p - (char*)st_mem)
 
 typedef struct node {
   // Indexes
@@ -31,7 +31,7 @@ void st_init(size_t size)
   size = ALIGN(size);
 
   // Byte array init
-  st_mem = malloc(size);
+  st_mem = (char*) malloc(size);
 
   // Indexes
   size_t head_i = 0;
@@ -56,12 +56,28 @@ void st_destroy()
 }
 
 // utilities
-void st_split(Node *split, Node *new)
+void st_split(Node *split, Node *create)
 {
+  // ptr to node after 'create'
+  Node *next = (Node*) &st_mem[ split->next ];
 
+  // split <- create -> next
+  create->next = st_indexOf(next);
+  create->prev = st_indexOf(split);
+
+  // split -> create <- next
+  size_t create_i = st_indexOf(create);
+  split->next = create_i;
+  next->prev = create_i;
 }
-void st_join(Node *join, Node *rem)
+void st_join(Node *join, Node *remove)
 {
+  // ptr to node after rem
+  Node *next = (Node*) &st_mem[ remove->next ];
+
+  // join <-> next
+  join->next = remove->next;
+  next->prev = remove->prev;
 }
 // Convert to defines
 void * st_nodeToPtr(Node *n)
@@ -77,14 +93,6 @@ Node * st_ptrToNode(void *ptr)
   // Go back by the size of node
   return (Node*) &ptr2[-sizeof(Node)];
 }
-
-// alloc (first), free & sizeof
-void *st_alloc(size_t size)
-{
-}
-int st_free(void *ptr)
-{
-}
 size_t st_sizeof(void *ptr)
 {
   // Retrieving coresponding Node
@@ -92,6 +100,66 @@ size_t st_sizeof(void *ptr)
 
   // Distance to next node - size of Node
   return n->next - st_indexOf(n) - sizeof(Node);
+}
+// alloc (first), free & sizeof
+void* st_malloc(size_t size)
+{
+  size = ALIGN(size);
+
+  // Start from beginning
+  Node *n = (Node*) st_mem;
+  do
+  {
+    // If open
+    if(n->open)
+    {
+      size_t n_size = st_sizeof(n) - sizeof(Node);
+
+      // If split needed
+      if( size < n_size)
+      {
+        // make 'create' after given block
+        size_t create_i = st_indexOf(n) + size + sizeof(Node);
+        Node *create = (Node*) &st_mem[ create_i];
+        st_split(n, create);
+
+        // changing open values
+        n->open = 0;
+        create->open = 1;
+
+        return st_nodeToPtr(n);
+      }
+      // If no split needed
+      else if( size == n_size)
+      {
+        // convert current node
+        n->open = 0;
+
+        return st_nodeToPtr(n);
+      }
+    }
+
+    // goto next Node
+    n = (Node*) &st_mem[ n->next ];
+  } while ( st_indexOf(n) != n->next);
+
+    // No block found
+  return NULL;
+}
+void st_free(void *ptr)
+{
+  // get relevent nodes
+  Node *n = st_ptrToNode(ptr), 
+       *prev = (Node*) &st_mem[ n->prev ], 
+       *next = (Node*) &st_mem[ n->next ];
+
+  // merging adjacent free blocks
+  if(next->open)
+    st_join(n, next);
+  if(prev->open)
+    st_join(prev, n);
+  else
+    n->open = 1;
 }
 
 //delete later
