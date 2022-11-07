@@ -7,18 +7,19 @@
 #ifndef STALLOC
 #define STALLOC
 
+// defines for perfomance sake
+#ifndef STALLOCpp
 #define SYS_BYTE   sizeof(void*)
 #define ALIGN(s)   ((s-1) / SYS_BYTE * SYS_BYTE) + SYS_BYTE
-
-// defines for perfomance sake
 #define st_nodeToPtr(n)    (void*) (  ((size_t)n)  + sizeof(Node) )
 #define st_ptrToNode(ptr)  (Node*) ( ((size_t)ptr) - sizeof(Node) )
-
+#define st_sizeof(ptr)     (st_ptrToNode(ptr))->next - (size_t)(st_ptrToNode(ptr)) - sizeof(Node)
+#endif
 
 typedef struct node {
   // Treated as pointers
   size_t next;
-  size_t prev : sizeof(size_t)*8-1;
+  size_t prev : sizeof(size_t)*8 - 1; // better memory but 5% reduction in performance
 
   size_t open : 1;
 } Node;
@@ -32,8 +33,8 @@ void st_init(size_t size)
   size = ALIGN(size);
 
   // byte array setup
-  st_mem = (size_t)malloc(size);
-
+  st_mem = (size_t) malloc(size);
+  
   // head tail locations
   Node *head = ((Node*)(st_mem));
   Node *tail = ((Node*)(st_mem+size-sizeof(Node)));
@@ -171,6 +172,5 @@ void st_free(void *ptr)
   else
     (st_ptrToNode(ptr))->open = 1;
 }
-#define st_sizeof(ptr)     (st_ptrToNode(ptr))->next - (size_t)(st_ptrToNode(ptr)) - sizeof(Node)
 
 #endif
