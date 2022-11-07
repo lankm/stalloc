@@ -13,3 +13,5 @@ Nodes with pointers won!! Sadly you can't create void* bitfields so theres a lot
 - I'm not going to go crazy on the optimizations though.
 - c++ equivelent runs at about a 10% hit to performance
 
+Ok so ive come across something I 'like' and absolutely hate. stalloc_abomination turns all the void functions into #defines and gives a 15% boost to performance. For the sake of my sanity and the mercy of my comments, That file is being put in timeout. I shall think about whether it should live or die a quick death.
+
