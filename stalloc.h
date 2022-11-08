@@ -8,13 +8,11 @@
 #define STALLOC
 
 // defines for perfomance sake
-#ifndef STALLOCpp
 #define SYS_BYTE   sizeof(void*)
 #define ALIGN(s)   ((s-1) / SYS_BYTE * SYS_BYTE) + SYS_BYTE
 #define st_nodeToPtr(n)    (void*) (  ((size_t)n)  + sizeof(Node) )
 #define st_ptrToNode(ptr)  (Node*) ( ((size_t)ptr) - sizeof(Node) )
 #define st_sizeof(ptr)     (st_ptrToNode(ptr))->next - (size_t)(st_ptrToNode(ptr)) - sizeof(Node)
-#endif
 
 typedef struct node {
   // Treated as pointers
@@ -57,7 +55,6 @@ void st_destroy()
 // utilities
 void st_split(Node *split, Node *create)
 {
-  /* readable version
   // ptr to node after create
   Node *next = ((Node*)(split->next));
 
@@ -70,21 +67,9 @@ void st_split(Node *split, Node *create)
 
   // split -> create
   split->next = (size_t)create;
-  */
-
-  // old <- create -> next
-  create->next = split->next;
-  create->prev = (size_t)split;
-
-  // create <- next
-  ((Node*)(split->next))->prev = (size_t)create;
-
-  // split -> create
-  split->next = (size_t)create;
 }
 void st_join(Node *join, Node *rem)
 {
-  /* readable version
   // ptr to node after rem
   Node *next = (Node*)(rem->next);
 
@@ -93,13 +78,6 @@ void st_join(Node *join, Node *rem)
 
   // joined <- next
   next->prev = (size_t)join;
-  */
-
-  // joined -> next
-  join->next = rem->next;
-
-  // joined <- next
-  ((Node*)(rem->next))->prev = (size_t)join;
 }
 
 // alloc (first), free & sizeof
@@ -149,7 +127,6 @@ void *st_malloc(size_t size)
 }
 void st_free(void *ptr)
 {
-  /* readable version
   // get relevent nodes
   Node *n = st_ptrToNode(ptr), 
        *prev = ((Node*)(n->prev)), 
@@ -162,15 +139,6 @@ void st_free(void *ptr)
     st_join(prev, n);
   else
     n->open = 1;
-  */
-  
-  // merging adjacent free blocks
-  if( ((Node*)((st_ptrToNode(ptr))->next))->open )
-    st_join(         (st_ptrToNode(ptr))         , ((Node*)((st_ptrToNode(ptr))->next)) );
-  if( ((Node*)((st_ptrToNode(ptr))->prev))->open )
-    st_join( ((Node*)((st_ptrToNode(ptr))->prev)),         (st_ptrToNode(ptr))          );
-  else
-    (st_ptrToNode(ptr))->open = 1;
 }
 
 #endif
