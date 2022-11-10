@@ -7,14 +7,16 @@ Implments a byte array with block nodes placed before given pointers. Uses first
 Testing method: simple malloc, sizeof, then free 1,000,000,000 times, And use clock() before and after.
 
 Unoptimized
-- Malloc      ( 41,114 )
-- stalloc.h   ( 11,184 )
-- stalloc.hpp ( 15,555 )
+- Malloc      (  37,974,891 Tics )
+- stalloc.h   ( 127,191,651 Tics )
+- stalloc.hpp ( 124,542,994 Tics )
 
 Optimized (-O2)
 - malloc      (  N/A  )
-- stalloc.h   ( 8,279 )
-- stalloc.hpp ( 7,814 )
+- stalloc.h   ( 21,229,656 Tics )
+- stalloc.hpp ( 21,843,366 Tics )
+
+
 
 
 

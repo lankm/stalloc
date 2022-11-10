@@ -161,7 +161,7 @@ public:
     else
       n->open = 1;
   }
-  size_t size(void *ptr)
+  size_t sizeOf(void *ptr)
   {
     return (ptrToNode(ptr))->next - (size_t)(ptrToNode(ptr)) - sizeof(Node);
   }

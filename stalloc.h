@@ -26,7 +26,7 @@ typedef struct node {
 size_t st_mem;
 
 // init & destroy
-void st_init(size_t size)
+inline void st_init(size_t size)
 {
   size = ALIGN(size);
 
@@ -47,13 +47,13 @@ void st_init(size_t size)
   tail->prev = (size_t)head;
   tail->open = 0;
 }
-void st_destroy()
+inline void st_destroy()
 {
   free((void*)st_mem);
 }
 
 // utilities
-void st_split(Node *split, Node *create)
+inline void st_split(Node *split, Node *create)
 {
   // ptr to node after create
   Node *next = ((Node*)(split->next));
@@ -68,7 +68,7 @@ void st_split(Node *split, Node *create)
   // split -> create
   split->next = (size_t)create;
 }
-void st_join(Node *join, Node *rem)
+inline void st_join(Node *join, Node *rem)
 {
   // ptr to node after rem
   Node *next = (Node*)(rem->next);
@@ -81,7 +81,7 @@ void st_join(Node *join, Node *rem)
 }
 
 // alloc (first), free & sizeof
-void *st_malloc(size_t size)
+inline void *st_malloc(size_t size)
 {
   // No readable version needed. Already as fast as possible
   size = ALIGN(size);
@@ -125,7 +125,7 @@ void *st_malloc(size_t size)
 
   return NULL;
 }
-void st_free(void *ptr)
+inline void st_free(void *ptr)
 {
   // get relevent nodes
   Node *n = st_ptrToNode(ptr), 
